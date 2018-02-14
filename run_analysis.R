@@ -40,3 +40,12 @@ df <- bind_rows(df_train, df_test)
 
 # Clean up temporary data
 rm(df_labels, variable_names, df_train, train_activities, df_test, test_activities)
+
+activity_labels <- read_table2("./data/UCI HAR Dataset/activity_labels.txt",
+        col_names = c("code", "activity"),
+        col_types = cols(code = col_integer(),
+                         activity = col_character())
+    ) %>%
+    mutate(activity = as_factor(activity))
+
+df <- mutate(df, activity = activity_labels$activity[match(activity, activity_labels$code)])
