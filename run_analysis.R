@@ -1,6 +1,7 @@
 library(tidyverse)
 library(glue)
 
+# Download dataset
 if (!file.exists("./data")) {
     dir.create("./data")
 }
@@ -18,13 +19,9 @@ df_labels <- read_table2(glue("{basedir}/features.txt"),
                                           X2 = col_character()))
 variable_names <- df_labels[[2]]
 
-# Load Activity factors
-activity_labels <- read_table2(glue(basedir, "/activity_labels.txt"),
-                               col_names = c("code", "activity"),
-                               col_types = cols(code = col_integer(),
-                                                activity = col_character())) %>%
-    mutate(activity = as_factor(activity))
-
+# Function to load a complete dataset
+# basedir - base path to downloaded dataset
+# datasetname - name of dataset, e.g. train or test
 read_dataset <- function(basedir, datasetname) {
     # Load time and frequency domain variables
     df_dataset <- read_table2(
@@ -35,8 +32,7 @@ read_dataset <- function(basedir, datasetname) {
 
     # Load activities
     activities <- read_lines(glue("{basedir}/{datasetname}/y_{datasetname}.txt"))
-    df_dataset <- add_column(df_dataset, activity = activities) %>%
-        mutate(activity = activity_labels$activity[match(activity, activity_labels$code)])
+    df_dataset <- add_column(df_dataset, activity = activities)
 
     # Load Subject identifiers
     subjects <- read_lines(glue("{basedir}/{datasetname}/subject_{datasetname}.txt"))
@@ -53,8 +49,31 @@ read_dataset <- function(basedir, datasetname) {
     df_dataset
 }
 
-# Combine train and test data sets
-df_smartphone <- bind_rows(read_dataset(basedir, "train"),
-                           read_dataset(basedir, "test"))
+#
+# Assignment Step 1: Merge train and test data sets
+#
+df_merge <- bind_rows(read_dataset(basedir, "train"),
+                      read_dataset(basedir, "test"))
+#
+# Assignment Step 2: Extract only mean and std deviation variables for each measurement
+#
+df_merge <- select(df_merge, subject, activity, matches(".*-(mean|std)\(\)-.*"))
 
-rm(activity_labels, df_labels, variable_names)
+#
+# Assignment Step 3: Use descriptive activity names for activities in the data set
+#
+activity_labels <- read_table2(glue(basedir, "/activity_labels.txt"),
+                               col_names = c("code", "activity"),
+                               col_types = cols(code = col_integer(),
+                                                activity = col_character())) %>%
+    mutate(activity = as_factor(activity))
+
+df_merge <- mutate(df_merge, activity = activity_labels$activity[match(activity, activity_labels$code)])
+
+#
+# Assignment Step 4: Use descriptive variable names
+#
+
+#
+# Assignment Step 5: create a new data set with average of each variable for each activity and each subject
+#
