@@ -57,7 +57,7 @@ df_merge <- bind_rows(read_dataset(basedir, "train"),
 #
 # Assignment Step 2: Extract only mean and std deviation variables for each measurement
 #
-df_merge <- select(df_merge, subject, activity, matches(".*-(mean|std)\(\)-.*"))
+df_merge <- select(df_merge, subject, activity, matches(".*-(mean|std)\\(\\)-.*"))
 
 #
 # Assignment Step 3: Use descriptive activity names for activities in the data set
