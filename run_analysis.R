@@ -36,7 +36,7 @@ read_dataset <- function(basedir, datasetname) {
 
     # Load Subject identifiers
     subjects <- read_lines(glue("{basedir}/{datasetname}/subject_{datasetname}.txt"))
-    df_dataset <- add_column(df_dataset, subject = parse_factor(subjects, 1:30))
+    df_dataset <- add_column(df_dataset, subjectId = parse_factor(subjects, 1:30))
 
     # Load Inertial Signals data
     for (var in c("body_acc_x", "body_acc_y", "body_acc_z", "body_gyro_x", "body_gyro_y", "body_gyro_z", "total_acc_x", "total_acc_y", "total_acc_z")) {
@@ -57,7 +57,7 @@ df_merge <- bind_rows(read_dataset(basedir, "train"),
 #
 # Assignment Step 2: Extract only mean and std deviation variables for each measurement
 #
-df_merge <- select(df_merge, subject, activity, matches(".*-(mean|std)\\(\\)-.*"))
+df_merge <- select(df_merge, subjectId, activity, matches(".*-(mean|std)\\(\\)-.*"))
 
 #
 # Assignment Step 3: Use descriptive activity names for activities in the data set
@@ -73,7 +73,22 @@ df_merge <- mutate(df_merge, activity = activity_labels$activity[match(activity,
 #
 # Assignment Step 4: Use descriptive variable names
 #
+names(df_merge) <- names(df_merge) %>%
+    str_replace("^t", "time") %>%
+    str_replace("^f", "frequency") %>%
+    str_replace("[aA]cc", "Acceleration") %>%
+    str_replace("[gG]yro", "AngularVelocity") %>%
+    str_replace("-mean\\(\\)-", "Mean") %>%
+    str_replace("-std\\(\\)-", "StandardDeviation")
 
 #
 # Assignment Step 5: create a new data set with average of each variable for each activity and each subject
 #
+df_average <- df_merge %>%
+    group_by(activity, subjectId) %>%
+    summarise_all(funs(mean))
+
+names(df_average) <- names(df_average) %>% str_replace("(^time.+|^frequency.+)", "\\1Average")
+
+# Clean up temporary data
+rm(activity_labels, df_labels, variable_names, basedir, fileURL, read_dataset)
